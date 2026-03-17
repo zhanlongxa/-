@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Caption Studio</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent: #fbc2eb;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text-dark);
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1400px;
+            height: 90vh;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            overflow: hidden;
+        }
+
+        /* --- LEFT SIDEBAR (Controls) --- */
+        .sidebar {
+            background: var(--glass-bg);
+            padding: 30px;
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .brand-icon {
+            font-size: 24px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .compact-uploader {
+            position: relative;
+            background: white;
+            border: 2px dashed #cbd5e0;
+            border-radius: var(--radius-md);
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            group: uploader;
+        }
+
+        .compact-uploader:hover {
+            border-color: var(--primary);
+            background: #f7fafc;
+        }
+
+        .compact-uploader.has-file {
+            border-style: solid;
+            border-color: transparent;
+        }
+
+        .compact-uploader img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            z-index: 1;
+        }
+
+        .compact-uploader.has-file img {
+            opacity: 0.3;
+            /* 透出背景 */
+        }
+
+        .compact-uploader.has-file::after {
+            content: '点击更换图片';
+            position: absolute;
+            z-index: 2;
+            color: var(--text-dark);
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 4px 12px;
+            border-radius: 20px;
+            backdrop-filter: blur(4px);
+        }
+
+        .upload-content {
+            text-align: center;
+            z-index: 2;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #edf2f7;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .input-group textarea,
+        .input-group input {
+            width: 100%;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 14px;
+            color: var(--text-dark);
+            resize: none;
+        }
+
+        .input-group textarea:focus,
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: none;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .action-btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        /* --- RIGHT MAIN STAGE --- */
+        .main-stage {
+            background: rgba(255, 255, 255, 0.4);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .stage-placeholder {
+            text-align: center;
+            color: var(--text-light);
+        }
+
+        .stage-placeholder svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .preview-wrapper {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            position: relative;
+            display: none;
+            /* Initially hidden */
+        }
+
+        .preview-wrapper img,
+        .preview-wrapper video {
+            max-width: 100%;
+            max-height: 80vh;
+            display: block;
+        }
+
+        .stage-tabs {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            background: white;
+            padding: 4px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            display: none;
+        }
+
+        .stage-tab {
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-light);
+        }
+
+        .stage-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            display: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Chips for keywords */
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .chip {
+            background: #edf2f7;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chip button {
+            border: none;
+            background: none;
+            color: #a0aec0;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .chip button:hover {
+            color: #e53e3e;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="brand">
+                <span class="brand-icon">✨</span>
+                <span class="brand-text">Smart Caption</span>
+            </div>
+
+            <!-- Uploader -->
+            <div>
+                <div class="section-title">1. Upload Image</div>
+                <div class="compact-uploader" id="uploader">
+                    <input type="file" id="fileInput" accept="image/*,application/pdf" style="display: none;">
+                    <img id="uploadPreviewBg" src="">
+                    <div class="upload-content">
+                        <div class="icon-btn">📄</div>
+                        <div style="font-size: 14px; color: var(--text-light);">Click or drag to upload</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Keywords -->
+            <div>
+                <div class="section-title">2. Extract Keywords</div>
+                <div class="input-group">
+                    <textarea id="keywordsInput" rows="3"
+                        placeholder="Enter keywords (paste directly, separated by space, comma or newline)..."></textarea>
+                    <div
+                        style="font-size: 12px; color: #a0aec0; margin-top: 6px; display: flex; justify-content: space-between;">
+                        <span>Batch paste supported</span>
+                        <span>Press Enter to add</span>
+                    </div>
+                    <div class="chips-container" id="keywordChips"></div>
+                </div>
+                <button class="action-btn" id="ocrBtn" style="margin-top: 12px;" disabled>
+                    <span>🔍 Start OCR</span>
+                </button>
+            </div>
+
+            <!-- Voice & Settings -->
+            <div style="flex: 1;">
+                <div class="section-title">3. Generate Video</div>
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label
+                        style="font-size: 12px; display: block; margin-bottom: 4px; color: var(--text-light);">Voiceover
+                        Script</label>
+                    <textarea id="voiceInput"
+                        rows="3">Autumn is the most poetic season of the year. Golden ginkgo leaves fall to the ground, and maple leaves paint the mountains red. The autumn breeze brings a gentle coolness.</textarea>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <div class="input-group" style="flex: 1;">
+                        <label
+                            style="font-size: 12px; display: block; margin-bottom: 4px; color: var(--text-light);">Duration
+                            (sec)</label>
+                        <input type="number" id="timeInput" value="2.8" step="0.1">
+                    </div>
+                    <div class="input-group" style="flex: 1; display: flex; align-items: flex-end;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+                            <input type="checkbox" id="silentToggle" checked> Silent Mode
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <button class="action-btn" id="generateBtn" disabled>
+                <span>🎬 Generate Video</span>
+            </button>
+
+            <button id="clearBtn"
+                style="width: 100%; padding: 12px; margin-top: 20px; border: 1px dashed #cbd5e0; background: transparent; color: #718096; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                🗑️ Clear History
+            </button>
+        </div>
+
+        <!-- Main Stage -->
+        <div class="main-stage" id="mainStage">
+            <!-- Tabs -->
+            <div class="stage-tabs" id="stageTabs">
+                <div class="stage-tab active" data-view="original">Original</div>
+                <div class="stage-tab" data-view="annotated">OCR Result</div>
+                <div class="stage-tab" data-view="video">Final Video</div>
+            </div>
+
+            <!-- Placeholder -->
+            <div class="stage-placeholder" id="stageEmpty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <p>Upload an image to start preview</p>
+            </div>
+
+            <!-- Media Viewers -->
+            <div class="preview-wrapper" id="imageViewer">
+                <img id="previewImg" src="">
+            </div>
+
+            <div class="preview-wrapper" id="videoViewer">
+                <video id="previewVideo" controls style="width: 100%;"></video>
+                <a href="#" id="downloadBtn"
+                    style="display: block; text-align: center; padding: 10px; background: white; text-decoration: none; color: var(--primary); font-weight: bold;">⬇️
+                    Download Video</a>
+            </div>
+
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner"></div>
+                <p id="loadingText" style="margin-top: 16px; font-weight: 500; color: var(--text-dark);">处理中...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentTaskId = null;
+        let currentKeywords = [];
+        let ocrResultUrl = '';
+        let videoUrl = '';
+
+        // DOM Elements
+        const uploader = document.getElementById('uploader');
+        const fileInput = document.getElementById('fileInput');
+        const bgPreview = document.getElementById('uploadPreviewBg');
+        const keywordsInput = document.getElementById('keywordsInput');
+        const chipsContainer = document.getElementById('keywordChips');
+        const ocrBtn = document.getElementById('ocrBtn');
+        const generateBtn = document.getElementById('generateBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        const mainStage = document.getElementById('mainStage');
+        const stageEmpty = document.getElementById('stageEmpty');
+        const imageViewer = document.getElementById('imageViewer');
+        const previewImg = document.getElementById('previewImg');
+        const videoViewer = document.getElementById('videoViewer');
+        const previewVideo = document.getElementById('previewVideo');
+        const stageTabs = document.getElementById('stageTabs');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+
+        // --- UPLOAD Logic ---
+        uploader.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', async (e) => {
+            if (!e.target.files.length) return;
+            const file = e.target.files[0];
+
+            // Immediate local preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                bgPreview.src = e.target.result;
+                // Also update main stage
+                previewImg.src = e.target.result;
+                uploader.classList.add('has-file');
+                showImageViewer();
+            };
+            reader.readAsDataURL(file);
+
+            // Upload
+            showLoading('图片上传中...');
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (data.task_id) {
+                    currentTaskId = data.task_id;
+                    ocrBtn.disabled = false;
+                    hideLoading();
+                } else {
+                    alert('Upload failed');
+                    hideLoading();
+                }
+            } catch (err) {
+                alert('Network error');
+                hideLoading();
+            }
+        });
+
+        // --- KEYWORDS Logic ---
+        keywordsInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const val = e.target.value.trim();
+                if (val) {
+                    // 支持批量输入：空格、逗号、换行、顿号
+                    const terms = val.split(/[\n\s,，、]+/).map(t => t.trim()).filter(t => t);
+                    terms.forEach(term => addKeyword(term));
+                    e.target.value = '';
+                }
+            }
+        });
+
+        function addKeyword(text) {
+            if (!currentKeywords.includes(text)) {
+                currentKeywords.push(text);
+                renderChips();
+            }
+        }
+
+        function removeKeyword(idx) {
+            currentKeywords.splice(idx, 1);
+            renderChips();
+        }
+
+        function renderChips() {
+            chipsContainer.innerHTML = currentKeywords.map((k, i) => `
+            <div class="chip">${k} <button onclick="removeKeyword(${i})">×</button></div>
+        `).join('');
+        }
+
+        // --- OCR Logic ---
+        ocrBtn.addEventListener('click', async () => {
+            // Auto-confirm pending keyword
+            const pendingText = keywordsInput.value.trim();
+            if (pendingText) {
+                // Split by newlines or commas
+                const terms = pendingText.split(/[\n,]+/).map(t => t.trim()).filter(t => t);
+                terms.forEach(term => addKeyword(term));
+                keywordsInput.value = '';
+            }
+
+            if (!currentKeywords.length) return alert('Please enter keywords first');
+
+            showLoading('AI is recognizing text positions...');
+
+            try {
+                const res = await fetch('/api/ocr', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        task_id: currentTaskId,
+                        keywords: currentKeywords
+                    })
+                });
+                const data = await res.json();
+
+                if (data.matches && data.matches.length > 0) {
+                    if (data.annotated_url) {
+                        ocrResultUrl = data.annotated_url;
+                        previewImg.src = ocrResultUrl;
+
+                        // Show tabs
+                        stageTabs.style.display = 'flex';
+                        switchTab('annotated');
+
+                        generateBtn.disabled = false;
+                    }
+                } else {
+                    alert('No matching keywords found. Please check the image or keywords');
+                }
+            } catch (err) {
+                alert('OCR recognition error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // --- CLEAR HISTORY Logic ---
+        clearBtn.addEventListener('click', async () => {
+            if (!confirm('确定要清空所有历史记录和缓存文件吗？')) return;
+
+            showLoading('正在清理垃圾文件...');
+            try {
+                const res = await fetch('/api/clear-history', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    alert('Cleanup complete! Page will refresh');
+                    location.reload();
+                } else {
+                    alert('Cleanup failed: ' + data.message);
+                }
+            } catch (err) {
+                alert('Network error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Copy extracted text button
+        const copyTextBtn = document.getElementById('copyTextBtn');
+        copyTextBtn.addEventListener('click', () => {
+            const extractedTextArea = document.getElementById('extractedText');
+            extractedTextArea.select();
+            document.execCommand('copy');
+
+            // Visual feedback
+            const originalText = copyTextBtn.textContent;
+            copyTextBtn.textContent = 'Copied!';
+            setTimeout(() => {
+                copyTextBtn.textContent = originalText;
+            }, 1500);
+        });
+
+        // --- VIDEO Generate Logic ---
+        generateBtn.addEventListener('click', async () => {
+            showLoading('正在渲染视频 (约 10-20秒)...');
+
+            try {
+                const res = await fetch('/api/video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        task_id: currentTaskId,
+                        voice_text: document.getElementById('voiceInput').value,
+                        highlight_time: parseFloat(document.getElementById('timeInput').value),
+                        use_silent: document.getElementById('silentToggle').checked
+                    })
+                });
+                const data = await res.json();
+
+                if (data.video_url) {
+                    videoUrl = data.video_url;
+                    previewVideo.src = videoUrl;
+                    document.getElementById('downloadBtn').href = videoUrl;
+
+                    switchTab('video');
+                } else {
+                    alert('Video generation failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                alert('Request timeout or error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // --- VIEW Control ---
+        function showImageViewer() {
+            stageEmpty.style.display = 'none';
+            imageViewer.style.display = 'block';
+            videoViewer.style.display = 'none';
+        }
+
+        function showVideoViewer() {
+            stageEmpty.style.display = 'none';
+            imageViewer.style.display = 'none';
+            videoViewer.style.display = 'block';
+            previewVideo.play();
+        }
+
+        function showLoading(text) {
+            loadingText.textContent = text;
+            loadingOverlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+
+        // Tabs
+        const tabs = document.querySelectorAll('.stage-tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => switchTab(tab.dataset.view));
+        });
+
+        function switchTab(view) {
+            // Update active tab
+            tabs.forEach(t => t.classList.toggle('active', t.dataset.view === view));
+
+            if (view === 'original') {
+                previewImg.src = bgPreview.src; // Original blob
+                showImageViewer();
+            } else if (view === 'annotated') {
+                if (ocrResultUrl) previewImg.src = ocrResultUrl;
+                showImageViewer();
+            } else if (view === 'video') {
+                if (videoUrl) showVideoViewer();
+            }
+        }
+
+    </script>
+</body>
+
+</html>

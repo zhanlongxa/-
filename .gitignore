@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+
+# Build and Dist
+build/
+dist/
+*.spec
+
+# OCR Models & Data (PaddleOCR/EasyOCR)
+.paddleocr/
+.paddlex/
+models/
+
+# Project Specific
+uploads/
+outputs/
+app.log
+temp_voice.mp3
+cpolar
+*.zip
+
+# OS
+.DS_Store

@@ -1,0 +1,15 @@
+flask>=3.0.0
+flask-cors
+werkzeug>=3.0.0
+paddlepaddle>=2.6.0
+paddleocr>=2.7.0
+easyocr>=1.7.0
+opencv-python-headless>=4.8.0
+numpy
+Pillow>=10.0.0
+moviepy==1.0.3
+edge-tts==6.1.12
+pymupdf>=1.23.0
+gunicorn>=21.2.0
+requests
+uuid
